@@ -1,162 +1,119 @@
 # Healthcare Appointment & Follow-up Manager
 
-An end-to-end healthcare appointment and clinical follow-up management platform built with Python, Django, Django REST Framework (DRF), React, Tailwind CSS, and Google Gemini AI.
+An end-to-end healthcare appointment platform with AI-powered symptom analysis, role-based portals (Patient, Doctor, Admin), 10-minute temporary slot hold reservations, doctor leave conflict resolution, and automated medication reminders.
 
 ---
 
-## 1. Key Features
+## Live Deployment
 
-1. Role-Based Portals (Patient, Doctor, Admin):
-   - Patient: Discover doctors by specialty, acquire 10-minute temporary slot holds, submit symptom questionnaires, view AI triage ratings, digital prescriptions, and medication schedules.
-   - Doctor: Real-time patient queue, AI pre-visit clinical briefings with urgency indicators and 3 diagnostic questions, post-visit consultation workspace with diagnosis, multi-item prescription builder, and AI patient-friendly summary generator.
-   - Admin: Doctor onboarding, working hours/slot duration configuration, leave conflict management, and notification delivery outbox.
+- Hosted Application (Vercel): https://health-care-appointment.vercel.app
+- GitHub Repository: https://github.com/Drishti1501/HealthCare-Appointment
+
+---
+
+## Default Demo Accounts
+
+Use the Quick Switch bar at the top of the app for 1-click login, or use these credentials:
+
+| Portal | Email | Password | Role Description |
+| :--- | :--- | :--- | :--- |
+| Admin | admin@healthcare.local | admin123 | Doctor profile & leave management, outbox monitoring |
+| Doctor | dr.smith@healthcare.local | doctor123 | Cardiology specialist - agenda, AI briefs, prescriptions |
+| Doctor | dr.patel@healthcare.local | doctor123 | General Medicine - consultation workspace |
+| Patient | alice@example.com | patient123 | Search doctors, hold slots, AI triage, care plans |
+| Patient | john.doe@example.com | patient123 | View prescriptions and medication reminders |
+
+---
+
+## Key Features
+
+1. Role-Based Portals:
+   - Patient Portal: Search doctors by specialty, book slots with a 10-minute live hold countdown, submit symptoms with Gemini AI triage, view digital prescriptions and dosage reminders.
+   - Doctor Portal: View daily patient queue, review pre-visit AI briefs with 3 suggested diagnostic questions and urgency ratings (Low / Medium / High), record prescriptions, and generate plain-language AI patient summaries.
+   - Admin Portal: Manage doctor rosters, working hours, and doctor leaves with automatic conflict resolution.
+
 2. Double-Booking & Concurrency Protection:
-   - Database-level composite unique constraint on (doctor, appointment_date, start_time).
-   - Pessimistic transaction locking (select_for_update).
-   - 10-minute temporary SlotHold reservation engine with automated background expiration.
+   - Database unique constraint on (doctor, date, start_time).
+   - Pessimistic row locking (select_for_update) during slot reservation.
+   - 10-minute temporary SlotHold mechanism with automatic background expiration.
+
 3. Doctor Leave Conflict Resolver:
-   - Marking doctor leave automatically identifies all conflicting confirmed appointments, transitions their status to CANCELLED_LEAVE_CONFLICT, and triggers automated cancellation emails with 1-click reschedule guidance.
-4. AI-Powered Clinical Intelligence (Google Gemini):
-   - Pre-Visit Analysis: Analyse symptoms and return urgency level (Low / Medium / High), chief complaint, and three suggested questions for the doctor.
-   - Post-Visit Translation: Convert clinical notes and prescriptions into a patient-friendly summary with medication schedule and follow-up steps.
-   - Graceful Degradation: Deterministic rule-based fallback engines ensure the platform never breaks if the AI API is unavailable.
-5. Background Workers & Reminders (APScheduler):
-   - Medication reminder dispatch based on prescription frequency (Daily, Twice Daily, Three Times Daily, etc.).
-   - Email retry queue with exponential backoff and dead-letter handling.
-   - Expired slot hold eviction.
-6. Multi-Channel Calendar & Email Sync:
-   - Google Calendar API OAuth 2.0 integration plus RFC-5545 .ics calendar file generator.
-   - Django Email backend with Outbox logging and retry queues.
+   - When a doctor marks leave, overlapping confirmed appointments are automatically cancelled (CANCELLED_LEAVE_CONFLICT) and affected patients receive email alerts with 1-click reschedule links.
+
+4. AI-Powered Intelligence (Google Gemini):
+   - Pre-Visit: Evaluates patient symptoms to generate urgency triage, chief complaints, and diagnostic probing questions.
+   - Post-Visit: Translates clinical notes into a patient-friendly care summary with structured medication timetables.
+   - Graceful Fallback: Rule-based fallback engine ensures uninterrupted operation if the AI API is unavailable.
+
+5. Background Jobs (APScheduler):
+   - Automated medication reminders based on prescription frequency (Daily, Twice Daily, etc.).
+   - Email retry queue with exponential backoff for failed deliveries.
+   - Automatic cleanup of expired slot holds.
+
+6. Calendar Integration:
+   - Google Calendar API OAuth 2.0 sync.
+   - Universal .ics iCalendar file attachment included in all confirmation emails.
 
 ---
 
-## 2. Quick Start Guide
+## Local Setup
 
-### Prerequisites
-- Python 3.10+
-- Node.js 18+ and npm
-
-### Backend Setup (Django)
+### 1. Backend (Django)
 
 `ash
 cd backend
-
-# Install dependencies
 pip install -r requirements.txt
-
-# Run migrations
 python manage.py makemigrations authentication appointments prescriptions integrations
 python manage.py migrate
-
-# Seed database with sample doctors, patients, and bookings
 python seed_data.py
-
-# Start Django development server
 python manage.py runserver
 `
-The Django API will be accessible at http://127.0.0.1:8000/.
+Backend API will run at http://127.0.0.1:8000/.
 
-### Frontend Setup (React + Vite + Tailwind)
+### 2. Frontend (React + Vite)
 
 `ash
 cd frontend
-
-# Install packages
 npm install
-
-# Start Vite development server
 npm run dev
 `
-The web application will be available at http://localhost:5173/.
+Frontend will run at http://localhost:5173/.
 
 ---
 
-## 3. Default Demo Accounts
+## Documentation
 
-| Role | Email | Password |
-| :--- | :--- | :--- |
-| Admin | admin@healthcare.local | admin123 |
-| Doctor (Cardiology) | dr.smith@healthcare.local | doctor123 |
-| Doctor (General Medicine) | dr.patel@healthcare.local | doctor123 |
-| Patient | alice@example.com | patient123 |
-| Patient | john.doe@example.com | patient123 |
-
-(You can also use the Quick Switch Role buttons at the top of the interface for 1-click instant login).
+- System Design Write-up (800 words): docs/SYSTEM_DESIGN.md
+- REST API Documentation: docs/API_DOCUMENTATION.md
+- Google Calendar Setup Guide: docs/GOOGLE_CALENDAR_SETUP.md
 
 ---
 
-## 4. Repository Structure
+## Project Structure
 
 `
 healthcare-appointment-manager/
-|-- backend/
-|   |-- healthcare_core/        # Django settings, wsgi, asgi, root urls
+|-- api/                        # Vercel serverless entry point
+|   -- index.py
+|-- backend/                    # Django Backend & REST API
 |   |-- authentication/         # Role-based User model (Patient, Doctor, Admin)
-|   |-- appointments/           # DoctorProfile, DoctorLeave, SlotHold, Appointment
-|   |   -- services/           # Slot locking engine & leave conflict resolver
-|   |-- prescriptions/          # Prescriptions, Items, Medication reminders
-|   |-- ai_assistant/           # Gemini LLM pre/post-visit prompts & fallbacks
-|   |-- integrations/           # Google Calendar OAuth 2.0, .ics invite, & email outbox
-|   |-- jobs/                   # APScheduler background tasks & retry workers
-|   |-- manage.py
-|   |-- requirements.txt
-|   |-- seed_data.py
-|   -- .env.example
-|-- frontend/
+|   |-- appointments/           # Doctor profiles, slot holds, bookings, leaves
+|   |-- prescriptions/          # Prescriptions, dosage items, reminders
+|   |-- ai_assistant/           # Gemini AI pre/post-visit services & prompts
+|   |-- integrations/           # Calendar (.ics/OAuth) & email outbox
+|   |-- jobs/                   # Background scheduler & reminder tasks
+|   |-- healthcare_core/        # Django settings and root URLs
+|   |-- seed_data.py            # Database seeder with demo data
+|   -- requirements.txt
+|-- frontend/                   # React + Tailwind CSS Frontend
 |   |-- src/
-|   |   |-- api/                # Typed Axios REST API client
-|   |   |-- context/            # AuthContext & state management
-|   |   |-- components/         # Navbar, Badges, Modals
-|   |   |-- pages/
-|   |   |   |-- patient/        # Doctor Directory, Booking Modal, Appointments, Prescriptions
-|   |   |   |-- doctor/         # Queue, Pre-Visit Brief, Consultation Workspace, Leaves
-|   |   |   |-- admin/          # Doctor roster, Leave resolver, Outbox logs
-|   |   |   -- auth/           # Login & Registration modal
-|   |   |-- App.tsx
-|   |   -- main.tsx
+|   |   |-- api/                # Axios API client
+|   |   |-- context/            # Auth state management
+|   |   |-- components/         # Navigation, badges, modals
+|   |   -- pages/              # Patient, Doctor, Admin portal pages
 |   |-- package.json
 |   -- vite.config.ts
-|-- docs/
-|   |-- SYSTEM_DESIGN.md        # 800-word System Design write-up
-|   |-- API_DOCUMENTATION.md    # Complete REST API reference
-|   -- GOOGLE_CALENDAR_SETUP.md # Google Calendar OAuth guide
-|-- render.yaml                 # Render Blueprint deployment config
-|-- build.sh                    # Render production build script
+|-- docs/                       # System design & API documentation
+|-- vercel.json                 # Vercel deployment configuration
 -- README.md
 `
-
----
-
-## 5. Environment Configuration (.env)
-
-Copy backend/.env.example to backend/.env:
-
-`env
-DJANGO_SECRET_KEY=healthcare-secret-key-change-in-production-2026
-DEBUG=True
-ALLOWED_HOSTS=*
-FRONTEND_URL=http://localhost:5173
-
-# Google Gemini API Key
-GEMINI_API_KEY=your_gemini_api_key_here
-
-# Email Configuration (Defaults to Console backend)
-EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
-DEFAULT_FROM_EMAIL=Healthcare Platform <noreply@healthcare-manager.local>
-
-# Google Calendar OAuth 2.0
-GOOGLE_CALENDAR_CLIENT_ID=
-GOOGLE_CALENDAR_CLIENT_SECRET=
-GOOGLE_CALENDAR_REDIRECT_URI=http://localhost:8000/api/integrations/google/callback/
-`
-
----
-
-## 6. Deployment Guide (Render / Railway / Vercel)
-
-### Deploy on Render (Recommended)
-1. In Render Dashboard, click New + > Blueprint.
-2. Connect your GitHub repository (HealthCare-Appointment).
-3. Render automatically detects render.yaml and executes build.sh to compile both the frontend and backend.
-4. Set your GEMINI_API_KEY under Environment Variables.
-5. Click Apply to deploy.
