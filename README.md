@@ -6,8 +6,7 @@ An end-to-end healthcare appointment platform with AI-powered symptom analysis, 
 
 ## Live Deployment
 
-- Hosted Application (Vercel): https://health-care-appointment.vercel.app
-- GitHub Repository: https://github.com/Drishti1501/HealthCare-Appointment
+- Hosted Application: https://health-care-appointment-tan.vercel.app/
 
 ---
 
